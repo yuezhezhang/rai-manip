@@ -28,6 +28,7 @@ arr PathFinder_RRT_Time::getDelta(const arr &p1, const arr &p2){
 }
 
 double PathFinder_RRT_Time::q_metric(const arr& d) const{
+#if 1
   double dist = 0;
   for (auto *j: TP.C.activeJoints){
     //double tmp = length(d({j->qIndex, j->qIndex+j->dim-1}));
@@ -43,8 +44,10 @@ double PathFinder_RRT_Time::q_metric(const arr& d) const{
   /*for (uint i=0; i<d.N; ++i){ 
     if(std::fabs(d(i)) > dist) {dist = std::fabs(d(i));}
   }*/
-
   return dist;
+#else
+  return length(d);
+#endif
 }
 
 double PathFinder_RRT_Time::distance(const Node &n1, const Node &n2){

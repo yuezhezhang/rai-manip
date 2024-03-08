@@ -642,13 +642,13 @@ arr ConfigurationProblem::sample(const arr &start, const arr &goal, const double
     rndGauss(tmp, 1, false);
     const double norm = length(tmp);
     for(uint i=0; i<sample.d0; ++i){ sample(i) = tmp(i) / norm;}
-    std::cout << sample << std::endl;
+    // std::cout << sample << std::endl;
 
     // const double c_min = length(start - goal);
     const double val = sqrt(c_max*c_max - c_min*c_min)/2;
 
-    std::cout << c_min << std::endl;
-    std::cout << c_max << std::endl;
+    // std::cout << c_min << std::endl;
+    // std::cout << c_max << std::endl;
 
     arr r(dim);
     r(0) = c_max / 2;
@@ -660,17 +660,17 @@ arr ConfigurationProblem::sample(const arr &start, const arr &goal, const double
     rotationFromAtoB(C, (goal-start) / c_min, u);
     transpose(C);
 
-    std::cout << C << std::endl;
+    // std::cout << C << std::endl;
 
     arr L;
     L.setDiag(r);
 
-    std::cout << L << std::endl;
+    // std::cout << L << std::endl;
 
     const arr center = (start + goal) / 2.;
     sample = C * L * sample + center;
 
-    std::cout << sample << std::endl;
+    // std::cout << sample << std::endl;
 
     // make sure that the sample is in the joint-limits
     // TODO: the version below is simply truncating, leading to non-uniform sampling
