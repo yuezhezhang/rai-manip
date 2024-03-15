@@ -205,6 +205,8 @@ struct PathFinder_RRT_Time{
   uint conv_iter = 500;
   bool sampleAdditionalNodes = false;
 
+  bool informed_sampling = false;
+
   std::vector<bool> periodicDimensions;
 
   double edge_checking_time_us{0.};

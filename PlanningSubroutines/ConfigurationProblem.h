@@ -82,6 +82,7 @@ struct TimedConfigurationProblem : ConfigurationProblem{
   ptr<QueryResult> query(const arr& x, const std::vector<double> times, const double tMin=0);
 
   bool checkEdge(const arr& x0, const double t0, const arr &x1, const double t1, const uint discretization=3);
+  arr sample(const arr &start={}, const arr &goal={}, const double c_max=0, const double c_min=0);
 };
 
 struct GoalStateProblem : MathematicalProgram {

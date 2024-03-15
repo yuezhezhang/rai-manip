@@ -446,7 +446,7 @@ TimedPath PathFinder_RRT_Time::plan(const arr &q0, const double t0, const TimedG
     }
     if (!res->isFeasible){
       //res->writeDetails(cout, TP.C);
-      // TP.C.watch(true);
+      TP.C.watch(true);
       spdlog::info("Final point not feasible at time {}", t);
       res->writeDetails(cout, TP.C);
       
@@ -454,10 +454,20 @@ TimedPath PathFinder_RRT_Time::plan(const arr &q0, const double t0, const TimedG
       continue;
     }
 
-    //TP.C.setJointState(q);
-    //TP.C.watch(true);
     spdlog::info("Adding goal at time {}", t);
+    // res->writeDetails(cout, TP.C);
+    // ConfigurationProblem cp(TP.C);
+    // {
+    //   auto res = cp.query(q);
 
+    //   if (res->isFeasible == false) {
+    //     res->writeDetails(cout, cp.C);
+    //     cp.C.watch(true);
+
+    //     TP.C.setJointState(q);
+    //     TP.C.watch(true);
+    //   }
+    // }
     Node *goal_node = new Node(q, t);
     goal_node->x = res->disp3d;
     goal_node->cost = 0;
@@ -684,9 +694,13 @@ TimedPath PathFinder_RRT_Time::plan(const arr &q0, const double t0, const TimedG
     //   }
     // }
 
-    arr qs = TP.sample();
-    // arr qs = TP.sample(q0, qT, (max_goal_time - t0) * vmax, min_l);
-    
+    arr qs;
+    if (informed_sampling) {
+      qs = TP.sample(q0, qT, (max_goal_time - t0) * vmax, min_l);
+    } else {
+      qs = TP.sample();
+    }
+
     // sample t
     const double min_dt_from_start = q_metric(getDelta(qs, q0)) / vmax;
     
