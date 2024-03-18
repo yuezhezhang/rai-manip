@@ -682,13 +682,14 @@ arr ConfigurationProblem::sample(const arr &start, const arr &goal, const double
       if(sample(i) < limits(i,0)){sample(i) = limits(i, 0);}
 
       // the manual limits
-      if(sample(i) > -5){sample(i) = -5;}
-      if(sample(i) < 5){sample(i) = 5;}
+      if(sample(i) < -5){sample(i) = -5;}
+      if(sample(i) > 5){sample(i) = 5;}
     }
   }
   return sample;
 }
 
+// NOTE: this asumes that we are doing inf-norm sampling
 arr TimedConfigurationProblem::sample(const arr &start, const arr &goal, const double c_max, const double c_min){
   const arr limits = C.getLimits();
   const uint dim = limits.dim(0);
@@ -710,30 +711,23 @@ arr TimedConfigurationProblem::sample(const arr &start, const arr &goal, const d
     }
   }
   else{
+    // this approach is sampling from an overapproximation of the actual space that can improve the solution
+    // actually, we would wan tto sample from a polytope of a very specific shape. This is hard tho.
+    
     // this assumes that we are dealing with an infty norm
-    arr midpoint = (start + goal) / 2.;
-    cp_localRndUniform(sample,-0.5*c_max, 0.5*c_max,false);
+    const arr midpoint = (start + goal) / 2.;
 
-    // offset with midpoint
-    sample = sample + midpoint;
-
-    // std::cout << "samplign between " << c_max * 0.5 << std::endl;
-    // std::cout << "start: " << start << std::endl;
-    // std::cout << "goal: " << goal << std::endl;
-    // std::cout << "sample: " << sample << std::endl;
-
-    // make sure that the sample is in the joint-limits
-    // TODO: the version below is simply truncating, leading to non-uniform sampling
-    // possible solutions: rejection sampling? (probably inefficient in lots of cases)
     for (uint i=0; i<sample.d0; ++i){
-      if (abs(limits(i, 0) - limits(i, 1)) < 1e-6) {continue;} // no limit in this dim
-
-      if(sample(i) > limits(i,1)){sample(i) = limits(i, 1);}
-      if(sample(i) < limits(i,0)){sample(i) = limits(i, 0);}
-
-      // the manual limits
-      if(sample(i) < -10){sample(i) = -10;}
-      if(sample(i) > 10){sample(i) = 10;}
+      double lo = midpoint(i) - c_max * 0.5;
+      double hi = midpoint(i) + c_max * 0.5;
+  
+      // if the diff between both limits is smaller than 1e-6, we treat this as not having a limit
+      if (abs(limits(i, 0) - limits(i, 1)) > 1e-6) {
+        lo = std::max(lo, limits(i, 0));
+        hi = std::min(hi, limits(i, 1));
+      }
+    
+      sample.p[i] = (double)rnd2_.uni(lo, hi);
     }
   }
   return sample;
