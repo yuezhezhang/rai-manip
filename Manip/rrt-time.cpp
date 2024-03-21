@@ -446,11 +446,10 @@ TimedPath PathFinder_RRT_Time::plan(const arr &q0, const double t0, const TimedG
     }
     if (!res->isFeasible){
       //res->writeDetails(cout, TP.C);
-      TP.C.watch(true);
-      spdlog::info("Final point not feasible at time {}", t);
+      spdlog::error("Final point not feasible at time {}", t);
       res->writeDetails(cout, TP.C);
+      // TP.C.watch(true);
       
-      // std::cout << "Final point not feasible at time " << t << std::endl;
       continue;
     }
 
@@ -648,52 +647,6 @@ TimedPath PathFinder_RRT_Time::plan(const arr &q0, const double t0, const TimedG
       }
     }
 
-    /*for (auto g: goals){
-      std::cout << g << std::endl;
-      TP.C.setJointState(g);
-      TP.C.watch(true);
-    }*/
-
-    // if (finalNodes[0]) std::cout << "t: " << tp.time.last() << std::endl;
-    // std::cout << max_time << std::endl;
-
-    // generate sample - we can assume that we are in an informed context from the beginning on
-    // arr qs;
-    // double max_t_sample;
-    // double min_t_sample;
-    // for (uint i=0; i<100; ++i){
-    //   qs = TP.sample();
-    //   // arr qs = TP.sample(q0, qT, (max_goal_time - t0) * vmax, min_l);
-      
-    //   // sample t
-    //   const double min_dt_from_start = q_metric(getDelta(qs, q0)) / vmax;
-      
-    //   max_t_sample = 0;
-    //   for (const auto g: goals){
-    //     const double goal_time = g.second;
-    //     const arr &goal_pose = g.first;
-        
-    //     const double tmp = goal_time - q_metric(getDelta(qs, goal_pose)) / vmax;
-    //     //std::cout << "time to goal: " << tmp << std::endl;
-    //     if (tmp > max_t_sample) {max_t_sample = tmp;}
-    //   }
-
-    //   //std::cout << max_goal_time << std::endl;
-    //   //std::cout << min_dt_from_goal << std::endl;
-
-    //   min_t_sample = t0 + min_dt_from_start;
-
-    //   if (min_t_sample > max_t_sample){
-    //     //std::cout << min_t_sample << " " << max_t_sample << std::endl;
-    //     std::cout << "Rejected sample" << std::endl;
-    //     //HALT("A");
-    //     continue;
-    //   }
-    //   else{
-    //     break;
-    //   }
-    // }
-
     arr qs;
     if (informed_sampling) {
       qs = TP.sample(q0, qT, (max_goal_time - t0) * vmax, min_l);
@@ -705,7 +658,7 @@ TimedPath PathFinder_RRT_Time::plan(const arr &q0, const double t0, const TimedG
     const double min_dt_from_start = q_metric(getDelta(qs, q0)) / vmax;
     
     double max_t_sample = 0;
-    for (const auto g: goals){
+    for (const auto &g: goals){
       const double goal_time = g.second;
       const arr &goal_pose = g.first;
       
@@ -745,7 +698,7 @@ TimedPath PathFinder_RRT_Time::plan(const arr &q0, const double t0, const TimedG
     Node sampled(qs, ts);
     
     // steer from close towards sampled
-    spdlog::info("Added sample at time {}", ts);
+    spdlog::trace("Added sample at time {}", ts);
     Node* ta_new = extend(ta, sampled, connect);
 
     if (ta_new){
