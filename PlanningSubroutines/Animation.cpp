@@ -156,14 +156,15 @@ void rai::Animation::setToTime(rai::Configuration& C, const double t, const doub
     }
   }
 
+  
   arr poses(timeMap.size(), 7);
-  uintA ids(timeMap.size());
+  uintA set_ids(timeMap.size());
 
   uint cnt = 0;
   for (const auto &e: timeMap){
     //if (length(C.getFrameState(uintA({e.first})) - e.second) < 1e-3) {continue;}
 
-    ids(cnt) = e.first;
+    set_ids(cnt) = e.first;
     poses[cnt]() = poseMap[e.first];
 
     // ids.append(e.first);
@@ -172,7 +173,60 @@ void rai::Animation::setToTime(rai::Configuration& C, const double t, const doub
     ++cnt;
   }
 
-  C.setFrameState(poses, ids);
+  C.setFrameState(poses, set_ids);
+
+  // // go over all the objects that have not been set now
+  // arr unset_ids;
+  // for (const auto f: C.frames){
+  //   if (set_ids.contains(f->ID)){continue;}
+  //   unset_ids.append(f->ID);
+
+  //   // std::cout << f->name << std::endl;
+  // }
+
+  // timeMap.clear();
+  
+  // for (uint i=0; i<A.d0; ++i){
+  //   const auto &a = A(i);
+  //   const double &start = a.start;
+
+  //   if (start < t){
+  //     continue;
+  //   }
+
+  //   for (const uint id: unset_ids){
+  //     if (a.frameIDs.contains(id)){
+  //       uint ind = a.frameIDs.findValue(id);
+  //       if (timeMap.count(id) == 0 || start < timeMap[id]){
+  //         timeMap[id] = start;
+
+  //         tmp.referToDim(a.X, 0);
+  //         poseMap[id].referToDim(tmp, ind);
+  //       }
+  //     }
+  //   }
+  // }
+
+  // {
+  //   arr poses(timeMap.size(), 7);
+  //   uintA ids(timeMap.size());
+
+  //   uint cnt = 0;
+  //   for (const auto &e : timeMap) {
+  //     // if (length(C.getFrameState(uintA({e.first})) - e.second) < 1e-3)
+  //     // {continue;}
+
+  //     ids(cnt) = e.first;
+  //     poses[cnt]() = poseMap[e.first];
+
+  //     // ids.append(e.first);
+  //     // poses.append(e.second);
+
+  //     ++cnt;
+  //   }
+
+  //   C.setFrameState(poses, ids);
+  // }
 
   // auto end_time = std::chrono::high_resolution_clock::now();
   // auto duration = std::chrono::duration_cast<std::chrono::microseconds>( end_time - start_time ).count();

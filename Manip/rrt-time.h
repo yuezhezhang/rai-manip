@@ -183,6 +183,11 @@ struct Tree: GLDrawer {
   }
 };
 
+enum class SamplingType{
+  BOX_CONSTRAINED_CONDITIONAL_SAMPLING,
+  REJECTION_SAMPLING,
+};
+
 using TimedGoalSampler = std::function<void (const double, arr&)>;
 struct PathFinder_RRT_Time{
   TimedConfigurationProblem &TP;
@@ -204,6 +209,9 @@ struct PathFinder_RRT_Time{
   bool optimize = false;
   uint conv_iter = 500;
   bool sampleAdditionalNodes = false;
+
+  SamplingType sampling_type = SamplingType::BOX_CONSTRAINED_CONDITIONAL_SAMPLING;
+  // SamplingType sampling_type = SamplingType::REJECTION_SAMPLING;
 
   bool informed_sampling = false;
 

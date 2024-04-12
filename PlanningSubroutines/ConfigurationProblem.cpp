@@ -497,20 +497,24 @@ ptr<QueryResult> TimedConfigurationProblem::query(const arr& x, const double t, 
 
   // set frame state of the ones that are fixed again
   if (A.prePlannedFrames.N != 0 && t < A.tPrePlanned){
+    // C.watch(true);
+
     //C.setFrameState(poses, A.prePlannedFrames);
     uint cnt=0;
-    for (auto f: A.prePlannedFrames) C[f->name]->setPose(poses[cnt++]);
-  //std::cout << "setting back to time" << std::endl;
-  //if (A.prePlannedFrames.N != 0 && t<95) {C.watch(true);}
+    for (const auto &f: A.prePlannedFrames) C[f->name]->setPose(poses[cnt++]);
+    //std::cout << "setting back to time" << std::endl;
+    //if (A.prePlannedFrames.N != 0 && t<95) {C.watch(true);}
+    // std::cout << "corrected" << std::endl;
+    // C.watch(true);
   }
 
   const auto res = ConfigurationProblem::query(x, false);
 
   //std::cout << res->isFeasible << std::endl;
 
-  //if (!res->isFeasible) C.watch(false);
+  // if (!res->isFeasible) C.watch(false);
   //std::cout << "final check" << std::endl;
-  //if (A.prePlannedFrames.N != 0) {C.watch(true);}
+  // if (A.prePlannedFrames.N != 0) {std::cout << t << std::endl; C.watch(true);}
 
   return res;
 }

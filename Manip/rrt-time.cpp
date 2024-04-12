@@ -64,7 +64,7 @@ double PathFinder_RRT_Time::distance(const Node &n1, const Node &n2){
     std::cout << dist << " " << dt << " " << dist / dt << std::endl;
   }
 
-  if (dt >= 0 && dt < 1e-3 && dist < 1e-5){
+  if (dt >= 0 && dt < 1e-6 && dist < 1e-6){
     return 0;
   }
 
@@ -79,6 +79,10 @@ Node* PathFinder_RRT_Time::steer(const Node &start, const Node &goal, bool rever
   const arr delta = getDelta(goal.q, start.q);
   const double dist = q_metric(delta);
   double dt = std::fabs(goal.t - start.t);
+
+  // std::cout << "goal.t: " << goal.t << std::endl;
+  // std::cout << "start.t: " << start.t << std::endl;
+  // std::cout << "dt: " << dt << std::endl;
 
   //std::cout << start.q << std::endl << goal.q << std::endl << dir << std::endl << goal.q - start.q << std::endl;
 
@@ -123,7 +127,7 @@ Node* PathFinder_RRT_Time::steer(const Node &start, const Node &goal, bool rever
 
   if (prePlannedFrames.N != 0){
     arr tmp = projectToManifold(q, t);
-    n->q = tmp;
+    n->q = tmp * 1.;
   }
 
   return n;
@@ -228,15 +232,22 @@ Node* PathFinder_RRT_Time::extend(Tree* tree, const Node &goal, const bool conne
       Node *n = steer(*close, goal, tree->reverse);
       close = tree->getNearest(*n);
 
+      // if (prev) std::cout << "prev" << prev->q << std::endl;
+      // if (close) std::cout << close->q << std::endl;
+
       if (!close){
+        // std:cout << "AAAAAAAAAAAA" << std::endl;
         delete n;
         return prev;
       }
 
       // TODO: make sure that this "close" is fine with the normal planning
       auto state_res = TP.query(n->q, n->t);
+      // TP.C.watch(true);
 
       if (!state_res->isFeasible){
+        // std::cout << "not feas" << std::endl;
+
         delete n;
         return prev;
       }
@@ -274,7 +285,7 @@ Node* PathFinder_RRT_Time::extend(Tree* tree, const Node &goal, const bool conne
         tree->addNode(n);
         prev = n;
 
-        //std::cout << distance(*n, goal) << " " <<  distance(goal, *n) << std::endl;
+        // std::cout << "dist: " <<  distance(*n, goal) << " " <<  distance(goal, *n) << std::endl;
         if (distance(*n, goal) < tol || distance(goal, *n) < tol){
           return n;
         }
@@ -282,12 +293,13 @@ Node* PathFinder_RRT_Time::extend(Tree* tree, const Node &goal, const bool conne
         prevDist = d;
       }
       else{
+        // std::cout << "BBBBBBBBBBBB" << std::endl;
         if(true || verbose){
-          //res->writeDetails(cout, TP.C);
-          //std::cout << "collisiton at time: " << n->t << std::endl;
-          //TP.A.setToTime(TP.C, n->t);
-          //TP.C.setJointState(n->q);
-          //TP.C.watch(true);
+          // res->writeDetails(cout, TP.C);
+          // std::cout << "collisiton at time: " << n->t << std::endl;
+          // TP.A.setToTime(TP.C, n->t);
+          // TP.C.setJointState(n->q);
+          // TP.C.watch(true);
         }
         delete n;
         return prev;
@@ -305,6 +317,7 @@ TimedPath PathFinder_RRT_Time::plan(const arr &q0, const double t0, const TimedG
   // check initial and final nodes
   if (!TP.query(q0, t0, 0)->isFeasible){
     spdlog::error("Initial point not feasible");
+    TP.C.watch(true);
     return TimedPath({}, {});
   }
   
@@ -382,7 +395,9 @@ TimedPath PathFinder_RRT_Time::plan(const arr &q0, const double t0, const TimedG
   Tree startTree(distFun);
   {
     // sample start
-    const arr q = q0;
+    // const arr q = q0;
+
+    const arr q = projectToManifold(q0, t0);
 
     Node *start_node = new Node(q, t0);
     start_node->cost = 0;
@@ -648,45 +663,83 @@ TimedPath PathFinder_RRT_Time::plan(const arr &q0, const double t0, const TimedG
     }
 
     arr qs;
-    if (informed_sampling) {
-      qs = TP.sample(q0, qT, (max_goal_time - t0) * vmax, min_l);
-    } else {
-      qs = TP.sample();
-    }
+    double ts;
+    if (sampling_type == SamplingType::BOX_CONSTRAINED_CONDITIONAL_SAMPLING){
+      if (informed_sampling) {
+        qs = TP.sample(q0, qT, (max_goal_time - t0) * vmax, min_l);
+      } else {
+        qs = TP.sample();
+      }
 
-    // sample t
-    const double min_dt_from_start = q_metric(getDelta(qs, q0)) / vmax;
-    
-    double max_t_sample = 0;
-    for (const auto &g: goals){
-      const double goal_time = g.second;
-      const arr &goal_pose = g.first;
+      // sample t
+      const double min_dt_from_start = q_metric(getDelta(qs, q0)) / vmax;
       
-      const double tmp = goal_time - q_metric(getDelta(qs, goal_pose)) / vmax;
-      //std::cout << "time to goal: " << tmp << std::endl;
-      if (tmp > max_t_sample) {max_t_sample = tmp;}
+      double max_t_sample = 0;
+      for (const auto &g: goals){
+        const double goal_time = g.second;
+        const arr &goal_pose = g.first;
+        
+        const double tmp = goal_time - q_metric(getDelta(qs, goal_pose)) / vmax;
+        //std::cout << "time to goal: " << tmp << std::endl;
+        if (tmp > max_t_sample) {max_t_sample = tmp;}
+      }
+
+      //std::cout << max_goal_time << std::endl;
+      //std::cout << min_dt_from_goal << std::endl;
+
+      const double min_t_sample = t0 + min_dt_from_start;
+
+      arr ts_arr(1);
+      rndUniform(ts_arr, min_t_sample, max_t_sample);
+      ts = ts_arr(0);
+
+      //std::cout << "sampling between " << min_t_sample << " " << max_t_sample << std::endl;
+
+      if (min_t_sample > max_t_sample){
+        //std::cout << min_t_sample << " " << max_t_sample << std::endl;
+        // std::cout << "Rejected sample" << std::endl;
+        //HALT("A");
+        continue;
+      }
+    }
+    else{
+      spdlog::info("Rejection sampling");
+
+      bool found_valid_sample = false;
+      while (true){
+        qs = TP.sample(q0, qT, (max_goal_time - t0) * vmax, min_l);
+        const double min_dt_from_start = q_metric(getDelta(qs, q0)) / vmax;
+
+        arr ts_arr(1);
+        rndUniform(ts_arr, t0, max_goal_time);
+        ts = ts_arr(0);
+
+        if (ts >= t0 + min_dt_from_start){
+          for (const auto &g: goals){
+            const double goal_time = g.second;
+            const arr &goal_pose = g.first;
+            
+            const double tmp = goal_time - q_metric(getDelta(qs, goal_pose)) / vmax;
+
+            if (ts <= tmp){
+              found_valid_sample = true;
+              break;
+            }
+          }
+
+          if (found_valid_sample){
+            // spdlog::info("Found sample at time {}", ts);
+            break;
+          }
+        }
+      }
     }
 
-    //std::cout << max_goal_time << std::endl;
-    //std::cout << min_dt_from_goal << std::endl;
-
-    const double min_t_sample = t0 + min_dt_from_start;
-
-    arr ts_arr(1);
-    rndUniform(ts_arr, min_t_sample, max_t_sample);
-    double ts = ts_arr(0);
-
-    if (prePlannedFrames.N != 0 && ts < tPrePlanned){
+    if (prePlannedFrames.N != 0 && ts <= tPrePlanned){
+      // std::cout << ts << std::endl;
+      // std::cout << qs << std::endl;
       qs = projectToManifold(qs, ts);
-    }
-
-    //std::cout << "sampling between " << min_t_sample << " " << max_t_sample << std::endl;
-
-    if (min_t_sample > max_t_sample){
-      //std::cout << min_t_sample << " " << max_t_sample << std::endl;
-      // std::cout << "Rejected sample" << std::endl;
-      //HALT("A");
-      continue;
+      // std::cout << qs << std::endl << std::endl;
     }
 
     if (verbose){
@@ -702,6 +755,8 @@ TimedPath PathFinder_RRT_Time::plan(const arr &q0, const double t0, const TimedG
     Node* ta_new = extend(ta, sampled, connect);
 
     if (ta_new){
+      spdlog::trace("Successfully extended");
+      // TP.C.watch(true);
       if (disp){
         TP.A.setToTime(DSP, ta_new->t);
         DSP.setJointState(ta_new->q);
@@ -713,6 +768,7 @@ TimedPath PathFinder_RRT_Time::plan(const arr &q0, const double t0, const TimedG
       Node* tb_new = extend(tb, *ta_new, connect);
 
       if(tb_new){ 
+        spdlog::trace("Successfully connected");
         if (disp){
           TP.A.setToTime(DSP, tb_new->t);
           DSP.setJointState(tb_new->q);
