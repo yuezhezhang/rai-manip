@@ -321,7 +321,7 @@ shared_ptr<QueryResult> ConfigurationProblem::query(const arr& x, const bool set
   // C.fcl()->stopEarly = true;
 
   shared_ptr<QueryResult> qr = make_shared<QueryResult>();
-  qr->disp3d = C.activeJoints.last()->frame->getPosition();
+  // qr->disp3d = C.activeJoints.last()->frame->getPosition();
 
   if (!limitsRespected){
     qr->isFeasible = false;
