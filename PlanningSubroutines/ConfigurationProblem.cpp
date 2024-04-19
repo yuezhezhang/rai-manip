@@ -307,11 +307,12 @@ shared_ptr<QueryResult> ConfigurationProblem::queryUsingFramestate(const arr &X)
 shared_ptr<QueryResult> ConfigurationProblem::query(const arr& x, const bool setJoints, const bool compProxies){
   bool limitsRespected = true;
   constexpr double tol = 0.2;
+  limits = C.getLimits();
   if(limits.N){
     for(uint i=0;i<x.N;i++){
       if(limits(i,1)>limits(i,0) && 
           (x.elem(i)<limits(i,0)*(1+tol) || x.elem(i)>limits(i,1)*(1+tol))){
-        //LOG(-1) <<"QUERY OUT OF LIMIT: joint " <<i <<": " <<x.elem(i) <<' ' <<limits[i];
+        // LOG(-1) <<"QUERY OUT OF LIMIT: joint " <<i <<": " <<x.elem(i) <<' ' <<limits[i];
         limitsRespected = false;
         break;
       }
