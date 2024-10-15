@@ -1,6 +1,10 @@
 #pragma once
 
 #include <Core/array.h>
+#include <Kin/kin.h>
+
+#include <Kin/kin.h>
+#include <Kin/frame.h>
 
 struct TimedPath{
   arr path;

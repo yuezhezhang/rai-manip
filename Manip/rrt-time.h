@@ -44,6 +44,9 @@ struct Node{
 struct Tree: GLDrawer {
   double comp_time_us{0.};
 
+  // TODO: replace with multiset, use orderedness to discard 
+  //       nodes that can not be close
+  // OR:   implement kd-tree that workd with our weird distance function
   std::vector<Node*> nodes;
   bool reverse;
 
@@ -52,8 +55,7 @@ struct Tree: GLDrawer {
   Tree(std::function<double (const Node&, const Node&)> _distance, bool _reverse=false):reverse(_reverse), distance(_distance){};
   ~Tree(){
     //std::cout << "deleting stuff" << std::endl;
-    for (auto n: nodes){
-
+    for (const auto &n: nodes){
       delete n;
     }
   }
@@ -62,7 +64,7 @@ struct Tree: GLDrawer {
     const auto start_time = std::chrono::high_resolution_clock::now();
 
     Node *close = nullptr;
-    double min_dist = 1e7;
+    double min_dist = std::numeric_limits<double>::max();
     double d;
     for (Node* n: nodes){
       if (reverse) {d = distance(target, *n);}
@@ -185,7 +187,10 @@ struct Tree: GLDrawer {
 
 enum class SamplingType{
   BOX_CONSTRAINED_CONDITIONAL_SAMPLING,
-  REJECTION_SAMPLING,
+  BOX_CONSTRAINED_REJECTION_SAMPLING,
+
+  CONDITIONAL_SAMPLING, // TODO, not implemented
+  REJECTION_SAMPLING, // TODO, not implemented
 };
 
 using TimedGoalSampler = std::function<void (const double, arr&)>;
